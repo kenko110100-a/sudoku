@@ -98,6 +98,40 @@ header .subtitle {
   line-height: 1.5;
 }
 
+.hotkey-table { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .hotkey-table { display: block; }
+}
+
+.hotkey-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  width: 100%;
+}
+
+.hk-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hk-desc {
+  font-size: 13px;
+  color: var(--ink2);
+  display: flex;
+  align-items: center;
+}
+
 /* Setup grid — now uses clickable cells like game board */
 #setup-board-wrap {
   display: flex;
@@ -285,6 +319,17 @@ header .subtitle {
 }
 
 .cell-user { color: var(--user-color); }
+
+#game-board td.locked-cell { background: var(--surface2); }
+#game-board td.locked-cell.selected { background: var(--selected-bg) !important; }
+.lock-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  opacity: 0.35;
+  pointer-events: none;
+  line-height: 1;
+}
 .cell-conflict { color: var(--conflict-color); }
 .cell-given-conflict { color: var(--given-conflict-color); font-weight: 700; }
 
@@ -302,7 +347,7 @@ header .subtitle {
   align-items: center;
   justify-content: center;
   font-family: 'DM Mono', monospace;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--note-color);
   line-height: 1;
@@ -470,7 +515,7 @@ header .subtitle {
   .cell-val { font-size: 18px; }
   .setup-cell-val { font-size: 17px; }
   .np-btn { font-size: 18px; }
-  .note-n { font-size: 8px; }
+  .note-n { font-size: 10px; }
 }
 
 @media (max-width: 360px) {
@@ -514,6 +559,20 @@ header .subtitle {
       <button class="btn btn-primary" onclick="startGame()">Start playing →</button>
     </div>
     <p id="setup-error" style="font-size:13px;color:var(--conflict-color);margin-top:10px;display:none">Please fill in at least 17 clues to have a valid puzzle.</p>
+
+    <div class="hotkey-table">
+      <p class="setup-label" style="margin-top:28px;margin-bottom:12px">Keyboard Shortcuts</p>
+      <div class="hotkey-grid">
+        <span class="hk-key">1 – 9</span><span class="hk-desc">Enter number</span>
+        <span class="hk-key">0 / Del</span><span class="hk-desc">Erase cell</span>
+        <span class="hk-key">N</span><span class="hk-desc">Toggle notes mode</span>
+        <span class="hk-key">L</span><span class="hk-desc">Lock / unlock cell</span>
+        <span class="hk-key">⌘Z / Ctrl Z</span><span class="hk-desc">Undo</span>
+        <span class="hk-key">Space</span><span class="hk-desc">Pause / resume</span>
+        <span class="hk-key">Esc</span><span class="hk-desc">Back to edit puzzle</span>
+        <span class="hk-key">↑ ↓ ← →</span><span class="hk-desc">Navigate cells</span>
+      </div>
+    </div>
   </div>
 
   <!-- GAME SCREEN -->
@@ -523,9 +582,13 @@ header .subtitle {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Notes
       </button>
-      <button class="btn btn-ghost" onclick="clearGameCell()" title="Erase cell (Del)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
-        Erase
+      <button class="btn btn-ghost" id="lock-btn" onclick="toggleLock()" title="Lock/unlock cell">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" id="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Lock
+      </button>
+      <button class="btn btn-ghost" id="undo-btn" onclick="undo()" title="Undo (⌘Z)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+        Undo
       </button>
       <button class="btn btn-ghost" id="pause-btn" onclick="togglePause()" title="Pause (Space)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" id="pause-icon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
@@ -572,6 +635,44 @@ let setupSelected = null;
 let givenMask = [], userVals = [], notes = [];
 let selected = null, noteMode = false, solved = false;
 let timerInterval = null, seconds = 0;
+let history = [];
+let locked = new Set();
+
+function pushHistory() {
+  history.push({
+    userVals: userVals.slice(),
+    notes: notes.map(s => new Set(s))
+  });
+}
+
+function undo() {
+  if (history.length === 0 || solved) return;
+  const prev = history.pop();
+  userVals = prev.userVals;
+  notes = prev.notes;
+  renderAll();
+  saveState();
+}
+
+function toggleLock() {
+  if (selected === null || givenMask[selected] || solved) return;
+  // Only lock cells with a number and no notes
+  if (!locked.has(selected) && (userVals[selected] === 0 || notes[selected].size > 0)) return;
+  if (locked.has(selected)) {
+    locked.delete(selected);
+  } else {
+    locked.add(selected);
+  }
+  renderAll();
+  saveState();
+}
+
+function updateLockBtn() {
+  const btn = document.getElementById('lock-btn');
+  if (!btn) return;
+  const isLocked = selected !== null && locked.has(selected);
+  btn.classList.toggle('active', isLocked);
+}
 let paused = false;
 
 // ── BUILD SETUP BOARD ──
@@ -720,7 +821,7 @@ function startGame() {
   userVals = setupVals.slice();
   notes = Array.from({ length: 81 }, () => new Set());
   selected = null; noteMode = false; solved = false;
-  seconds = 0;
+  seconds = 0; history = []; locked = new Set();
 
   document.getElementById('screen-setup').style.display = 'none';
   document.getElementById('screen-game').style.display = 'block';
@@ -783,13 +884,13 @@ function buildNumpad() {
     b.addEventListener('click', () => inputNum(n));
     np.appendChild(b);
   }
-  // Erase
-  const erase = document.createElement('button');
-  erase.className = 'np-btn np-erase';
-  erase.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
-  erase.setAttribute('aria-label', 'Erase');
-  erase.addEventListener('click', () => clearGameCell());
-  np.appendChild(erase);
+  const e = document.createElement('button');
+  e.className = 'np-btn np-erase';
+  e.id = 'np-erase';
+  e.setAttribute('aria-label', 'Erase cell');
+  e.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
+  e.addEventListener('click', clearGameCell);
+  np.appendChild(e);
 }
 
 function updateNumpad() {
@@ -807,7 +908,8 @@ function selectCell(idx) {
 }
 
 function inputNum(n) {
-  if (selected === null || givenMask[selected] || solved) return;
+  if (selected === null || givenMask[selected] || locked.has(selected) || solved) return;
+  pushHistory();
   if (noteMode) {
     notes[selected].has(n) ? notes[selected].delete(n) : notes[selected].add(n);
   } else {
@@ -831,7 +933,8 @@ function inputNum(n) {
 }
 
 function clearGameCell() {
-  if (selected === null || givenMask[selected] || solved) return;
+  if (selected === null || givenMask[selected] || locked.has(selected) || solved) return;
+  pushHistory();
   userVals[selected] = 0;
   notes[selected].clear();
   renderAll();
@@ -857,9 +960,11 @@ function updateNoteBtn() {
 function onGameKey(e) {
   if (e.key === ' ') { togglePause(); e.preventDefault(); return; }
   if (paused) return;
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') { undo(); e.preventDefault(); return; }
   if (e.key >= '1' && e.key <= '9') { inputNum(parseInt(e.key)); return; }
   if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { clearGameCell(); return; }
   if (e.key === 'n' || e.key === 'N') { toggleNote(); return; }
+  if (e.key === 'l' || e.key === 'L') { toggleLock(); return; }
   const dirs = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 };
   if (dirs[e.key] !== undefined && selected !== null) {
     const nxt = selected + dirs[e.key];
@@ -892,6 +997,7 @@ function getConflicts() {
 
 function renderAll() {
   updateNumpad();
+  updateLockBtn();
   const conflicts = getConflicts();
   const selR = selected !== null ? Math.floor(selected / 9) : -1;
   const selC = selected !== null ? selected % 9 : -1;
@@ -907,6 +1013,7 @@ function renderAll() {
     const keep = ['thick-right', 'thick-bottom', 'given'].filter(cl => td.classList.contains(cl));
     td.className = keep.join(' ');
 
+    if (locked.has(idx)) td.classList.add('locked-cell');
     if (idx === selected) td.classList.add('selected');
     else if (r === selR || c === selC || box === selBox) td.classList.add('highlight');
     if (selVal && userVals[idx] === selVal && idx !== selected && userVals[idx] !== 0) td.classList.add('same-val');
@@ -923,6 +1030,12 @@ function renderAll() {
         (isConflict ? (isGiven ? ' cell-given-conflict' : ' cell-conflict') : '');
       span.textContent = v;
       td.appendChild(span);
+      if (locked.has(idx)) {
+        const lk = document.createElement('span');
+        lk.className = 'lock-indicator';
+        lk.innerHTML = '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+        td.appendChild(lk);
+      }
     } else if (notes[idx] && notes[idx].size > 0) {
       const ng = document.createElement('div');
       ng.className = 'notes-grid';
