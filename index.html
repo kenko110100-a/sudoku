@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F0E8;
+  --surface: #FFFDF8;
+  --surface2: #EDE8DC;
+  --ink: #1A1714;
+  --ink2: #6B6560;
+  --ink3: #A09890;
+  --accent: #3D2B1F;
+  --accent2: #8B5E3C;
+  --given-color: #1A1714;
+  --user-color: #2255AA;
+  --note-color: #9B8B80;
+  --conflict-bg: #FDECEA;
+  --conflict-color: #C0392B;
+  --given-conflict-color: #7B1A0E;
+  --selected-bg: #E8DDD0;
+  --highlight-bg: #F0EBE2;
+  --same-bg: #DDD4C4;
+  --border: #C8BFB0;
+  --border-bold: #7A6A5A;
+  --success: #2E7D32;
+  --radius: 4px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header {
+  width: 100%;
+  padding: 24px 32px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  max-width: 520px;
+}
+
+header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+  font-style: italic;
+}
+
+header .subtitle {
+  font-size: 12px;
+  color: var(--ink3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.container {
+  width: 100%;
+  max-width: 520px;
+  padding: 20px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* ── SCREENS ── */
+#screen-setup, #screen-game { width: 100%; }
+#screen-game { display: none; }
+
+/* ── SETUP ── */
+.setup-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin-bottom: 12px;
+}
+
+.setup-hint {
+  font-size: 13px;
+  color: var(--ink3);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* Setup grid — now uses clickable cells like game board */
+#setup-board-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+#setup-board {
+  border-collapse: collapse;
+  border: 2px solid var(--border-bold);
+}
+
+#setup-board td {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.08s;
+}
+
+#setup-board td.thick-right { border-right: 2px solid var(--border-bold); }
+#setup-board td.thick-bottom { border-bottom: 2px solid var(--border-bold); }
+#setup-board td.setup-selected { background: var(--selected-bg) !important; }
+#setup-board td.setup-conflict { background: var(--conflict-bg); }
+
+.setup-cell-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--given-color);
+  pointer-events: none;
+}
+
+.setup-cell-conflict { color: var(--conflict-color); }
+
+/* Setup numpad */
+#setup-numpad {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 16px;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.btn:hover { background: var(--surface2); border-color: var(--border-bold); color: var(--ink); }
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  flex: 1;
+  font-size: 14px;
+  padding: 12px 20px;
+}
+.btn-primary:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink3);
+  padding: 10px 12px;
+}
+.btn-ghost:hover { background: var(--surface2); border-color: var(--border); color: var(--ink2); }
+
+.btn.active {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+}
+
+.setup-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+/* ── GAME CONTROLS ── */
+.game-controls {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  margin-bottom: 14px;
+  flex-wrap: nowrap;
+}
+
+.game-controls .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+#note-btn {
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+#status-msg {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--success);
+}
+
+/* ── GAME BOARD ── */
+#game-board-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+#game-board {
+  border-collapse: collapse;
+  border: 2px solid var(--border-bold);
+}
+
+#game-board td {
+  width: 50px;
+  height: 50px;
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+#game-board td.thick-right { border-right: 2px solid var(--border-bold); }
+#game-board td.thick-bottom { border-bottom: 2px solid var(--border-bold); }
+#game-board td.given { cursor: default; }
+#game-board td.selected { background: var(--selected-bg) !important; }
+#game-board td.highlight { background: var(--highlight-bg); }
+#game-board td.same-val { background: var(--same-bg); }
+#game-board td.conflict { background: var(--conflict-bg); }
+
+.cell-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--given-color);
+  pointer-events: none;
+}
+
+.cell-user { color: var(--user-color); }
+.cell-conflict { color: var(--conflict-color); }
+.cell-given-conflict { color: var(--given-conflict-color); font-weight: 700; }
+
+.notes-grid {
+  position: absolute;
+  inset: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  pointer-events: none;
+}
+
+.note-n {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--note-color);
+  line-height: 1;
+}
+
+/* ── NUMPAD (shared style) ── */
+#numpad, #setup-numpad {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 16px;
+}
+
+.np-btn {
+  flex: 1;
+  aspect-ratio: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.np-btn:hover { background: var(--surface2); border-color: var(--border-bold); }
+.np-btn:active { transform: scale(0.93); }
+.np-erase { font-size: 14px; color: var(--ink2); }
+.np-empty { background: transparent; border-color: transparent; cursor: default; }
+.np-empty:hover { background: transparent; border-color: transparent; }
+
+/* ── WIN OVERLAY ── */
+#win-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,23,20,0.55);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+#win-overlay.show { display: flex; }
+
+.win-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 40px 48px;
+  text-align: center;
+  max-width: 320px;
+  border: 1.5px solid var(--border);
+}
+
+.win-card h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.win-card p {
+  font-size: 14px;
+  color: var(--ink2);
+  margin-bottom: 24px;
+}
+
+.win-actions { display: flex; gap: 8px; justify-content: center; }
+
+/* ── TIMER ── */
+#timer {
+  flex: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+/* ── DARK MODE ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #181512; --surface: #221E1A; --surface2: #2E2924;
+    --ink: #F0EAE0; --ink2: #A09080; --ink3: #6A5E55;
+    --accent: #C8A882; --accent2: #A07850;
+    --given-color: #F0EAE0; --user-color: #88BBFF; --note-color: #706050;
+    --conflict-bg: #3A1A18; --conflict-color: #E57373; --given-conflict-color: #FFCDD2;
+    --selected-bg: #3A3028; --highlight-bg: #272218; --same-bg: #302820;
+    --border: #3E3630; --border-bold: #6A5A48; --success: #81C784;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #181512; --surface: #221E1A; --surface2: #2E2924;
+  --ink: #F0EAE0; --ink2: #A09080; --ink3: #6A5E55;
+  --accent: #C8A882; --accent2: #A07850;
+  --given-color: #F0EAE0; --user-color: #88BBFF; --note-color: #706050;
+  --conflict-bg: #3A1A18; --conflict-color: #E57373; --given-conflict-color: #FFCDD2;
+  --selected-bg: #3A3028; --highlight-bg: #272218; --same-bg: #302820;
+  --border: #3E3630; --border-bold: #6A5A48; --success: #81C784;
+}
+
+#theme-toggle {
+  margin-left: 0;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink3);
+  cursor: pointer;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: all 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+#theme-toggle:hover { background: var(--surface2); border-color: var(--border-bold); color: var(--ink); }
+
+/* ── PAUSE ── */
+#board-cover {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 2px;
+}
+#board-cover.show { display: flex; }
+#board-cover p {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink2);
+}
+#board-cover small {
+  font-size: 12px;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+}
+#game-board-wrap { position: relative; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+  .container { padding: 16px 8px 32px; }
+  header { padding: 16px 12px 0; }
+  header h1 { font-size: 26px; }
+  #game-board td { width: 38px; height: 38px; }
+  #setup-board td { width: 38px; height: 38px; }
+  .cell-val { font-size: 18px; }
+  .setup-cell-val { font-size: 17px; }
+  .np-btn { font-size: 18px; }
+  .note-n { font-size: 8px; }
+}
+
+@media (max-width: 360px) {
+  #game-board td { width: 34px; height: 34px; }
+  #setup-board td { width: 34px; height: 34px; }
+  .cell-val { font-size: 16px; }
+  .setup-cell-val { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sudoku</h1>
+  <span class="subtitle" style="flex:1">Daily Puzzles</span>
+  <button id="header-edit-btn" class="btn btn-ghost" onclick="goBackToSetup()" title="Edit puzzle" style="display:none;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    Edit
+  </button>
+  <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode">
+    <span id="theme-icon">🌙</span> <span id="theme-label">Dark</span>
+  </button>
+</header>
+
+<div class="container">
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup">
+    <p class="setup-label" style="margin-top:20px">New Puzzle</p>
+    <p class="setup-hint">Tap a cell, then tap a number to enter your puzzle. Tap the same number again or tap Erase to clear. Leave empty cells blank.</p>
+
+    <div id="setup-board-wrap">
+      <table id="setup-board" role="grid" aria-label="Puzzle entry grid"></table>
+    </div>
+
+    <div id="setup-numpad" role="group" aria-label="Setup number input"></div>
+
+    <div class="setup-actions">
+      <button class="btn" onclick="clearSetupBoard()" title="Clear all cells">Clear all</button>
+      <button class="btn" onclick="loadExample()">Example</button>
+      <button class="btn btn-primary" onclick="startGame()">Start playing →</button>
+    </div>
+    <p id="setup-error" style="font-size:13px;color:var(--conflict-color);margin-top:10px;display:none">Please fill in at least 17 clues to have a valid puzzle.</p>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game">
+    <div class="game-controls">
+      <button class="btn" id="note-btn" onclick="toggleNote()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Notes
+      </button>
+      <button class="btn btn-ghost" onclick="clearGameCell()" title="Erase cell (Del)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+        Erase
+      </button>
+      <button class="btn btn-ghost" id="pause-btn" onclick="togglePause()" title="Pause (Space)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" id="pause-icon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        <span id="pause-label">Pause</span>
+      </button>
+      <span id="timer">0:00</span>
+      <span id="status-msg"></span>
+    </div>
+
+    <div id="game-board-wrap">
+      <table id="game-board" role="grid" aria-label="Sudoku game board"></table>
+      <div id="board-cover"><p>Paused</p><small>tap resume to continue</small></div>
+    </div>
+
+    <div id="numpad" role="group" aria-label="Number input"></div>
+  </div>
+
+</div>
+
+<!-- WIN OVERLAY -->
+<div id="win-overlay" role="dialog" aria-modal="true" aria-labelledby="win-title">
+  <div class="win-card">
+    <h2 id="win-title">Solved!</h2>
+    <p id="win-time">You completed the puzzle.</p>
+    <div class="win-actions">
+      <button class="btn" onclick="goBackToSetup(); closeWin()">New puzzle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLE = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+
+// ── SAFE LOCALSTORAGE ──
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch(e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch(e) {} },
+  remove(k) { try { localStorage.removeItem(k); } catch(e) {} }
+};
+
+let setupVals = Array(81).fill(0);
+let setupSelected = null;
+
+let givenMask = [], userVals = [], notes = [];
+let selected = null, noteMode = false, solved = false;
+let timerInterval = null, seconds = 0;
+let paused = false;
+
+// ── BUILD SETUP BOARD ──
+function buildSetupBoard() {
+  const tbl = document.getElementById('setup-board');
+  tbl.innerHTML = '';
+  for (let r = 0; r < 9; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < 9; c++) {
+      const td = document.createElement('td');
+      const idx = r * 9 + c;
+      if (c === 2 || c === 5) td.classList.add('thick-right');
+      if (r === 2 || r === 5) td.classList.add('thick-bottom');
+      td.setAttribute('role', 'gridcell');
+      td.setAttribute('aria-label', `Row ${r+1}, Column ${c+1}`);
+      td.id = 'sc-' + idx;
+      td.addEventListener('click', () => selectSetupCell(idx));
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  renderSetupBoard();
+}
+
+function buildSetupNumpad() {
+  const np = document.getElementById('setup-numpad');
+  np.innerHTML = '';
+  for (let n = 1; n <= 9; n++) {
+    const b = document.createElement('button');
+    b.className = 'np-btn';
+    b.textContent = n;
+    b.setAttribute('aria-label', 'Enter ' + n);
+    b.addEventListener('click', () => inputSetupNum(n));
+    np.appendChild(b);
+  }
+  // Erase button
+  const erase = document.createElement('button');
+  erase.className = 'np-btn np-erase';
+  erase.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
+  erase.setAttribute('aria-label', 'Erase');
+  erase.addEventListener('click', () => eraseSetupCell());
+  np.appendChild(erase);
+}
+
+function selectSetupCell(idx) {
+  setupSelected = idx;
+  renderSetupBoard();
+}
+
+function inputSetupNum(n) {
+  if (setupSelected === null) return;
+  setupVals[setupSelected] = setupVals[setupSelected] === n ? 0 : n;
+  renderSetupBoard();
+  saveState();
+}
+
+function eraseSetupCell() {
+  if (setupSelected === null) return;
+  setupVals[setupSelected] = 0;
+  renderSetupBoard();
+  saveState();
+}
+
+function renderSetupBoard() {
+  const conflicts = getSetupConflicts();
+  for (let idx = 0; idx < 81; idx++) {
+    const td = document.getElementById('sc-' + idx);
+    if (!td) continue;
+    // preserve structural classes
+    const keep = ['thick-right', 'thick-bottom'].filter(cl => td.classList.contains(cl));
+    td.className = keep.join(' ');
+    if (idx === setupSelected) td.classList.add('setup-selected');
+    if (conflicts.has(idx) && setupVals[idx] !== 0) td.classList.add('setup-conflict');
+
+    td.innerHTML = '';
+    if (setupVals[idx] !== 0) {
+      const span = document.createElement('span');
+      span.className = 'setup-cell-val' + (conflicts.has(idx) ? ' setup-cell-conflict' : '');
+      span.textContent = setupVals[idx];
+      td.appendChild(span);
+    }
+  }
+}
+
+function getSetupConflicts() {
+  const bad = new Set();
+  const check = cells => {
+    const seen = {};
+    for (const i of cells) {
+      const v = setupVals[i]; if (!v) continue;
+      if (seen[v] !== undefined) { bad.add(i); bad.add(seen[v]); }
+      else seen[v] = i;
+    }
+  };
+  for (let i = 0; i < 9; i++) {
+    const row = [], col = [], box = [];
+    for (let j = 0; j < 9; j++) {
+      row.push(i * 9 + j);
+      col.push(j * 9 + i);
+      box.push(Math.floor(i / 3) * 27 + (i % 3) * 3 + Math.floor(j / 3) * 9 + j % 3);
+    }
+    check(row); check(col); check(box);
+  }
+  return bad;
+}
+
+// Keyboard support for desktop (setup screen)
+function onSetupKey(e) {
+  if (setupSelected === null) return;
+  if (/^[1-9]$/.test(e.key)) {
+    inputSetupNum(parseInt(e.key));
+  } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+    eraseSetupCell();
+  } else {
+    const dirs = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 };
+    if (dirs[e.key] !== undefined) {
+      const nxt = setupSelected + dirs[e.key];
+      if (nxt >= 0 && nxt < 81) { setupSelected = nxt; renderSetupBoard(); e.preventDefault(); }
+    }
+  }
+}
+
+function clearSetupBoard() {
+  setupVals = Array(81).fill(0);
+  setupSelected = null;
+  renderSetupBoard();
+  saveState();
+}
+
+function loadExample() {
+  clearSetupBoard();
+  EXAMPLE.split('').forEach((ch, i) => { setupVals[i] = parseInt(ch) || 0; });
+  renderSetupBoard();
+  saveState();
+}
+
+// ── START GAME ──
+function startGame() {
+  const clues = setupVals.filter(v => v > 0).length;
+  const err = document.getElementById('setup-error');
+  if (clues < 17) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+
+  clearSave();
+  givenMask = setupVals.map(v => v > 0);
+  userVals = setupVals.slice();
+  notes = Array.from({ length: 81 }, () => new Set());
+  selected = null; noteMode = false; solved = false;
+  seconds = 0;
+
+  document.getElementById('screen-setup').style.display = 'none';
+  document.getElementById('screen-game').style.display = 'block';
+  document.getElementById('header-edit-btn').style.display = '';
+  document.getElementById('status-msg').textContent = '';
+
+  document.removeEventListener('keydown', onSetupKey);
+  buildGameBoard();
+  buildNumpad();
+  updateNoteBtn();
+  startTimer();
+
+  document.addEventListener('keydown', onGameKey);
+}
+
+function goBackToSetup() {
+  paused = false;
+  document.getElementById('board-cover').classList.remove('show');
+  stopTimer();
+  document.removeEventListener('keydown', onGameKey);
+  document.getElementById('screen-game').style.display = 'none';
+  document.getElementById('screen-setup').style.display = 'block';
+  document.getElementById('header-edit-btn').style.display = 'none';
+  renderSetupBoard();
+  document.addEventListener('keydown', onSetupKey);
+}
+
+// ── GAME BOARD ──
+function buildGameBoard() {
+  const tbl = document.getElementById('game-board');
+  tbl.innerHTML = '';
+  for (let r = 0; r < 9; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < 9; c++) {
+      const td = document.createElement('td');
+      const idx = r * 9 + c;
+      if (c === 2 || c === 5) td.classList.add('thick-right');
+      if (r === 2 || r === 5) td.classList.add('thick-bottom');
+      if (givenMask[idx]) td.classList.add('given');
+      td.setAttribute('role', 'gridcell');
+      td.setAttribute('aria-label', `Row ${r+1} Col ${c+1}`);
+      td.addEventListener('click', () => selectCell(idx));
+      td.id = 'gc-' + idx;
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  renderAll();
+}
+
+function buildNumpad() {
+  const np = document.getElementById('numpad');
+  np.innerHTML = '';
+  for (let n = 1; n <= 9; n++) {
+    const b = document.createElement('button');
+    b.className = 'np-btn';
+    b.id = 'np-' + n;
+    b.textContent = n;
+    b.setAttribute('aria-label', 'Enter ' + n);
+    b.addEventListener('click', () => inputNum(n));
+    np.appendChild(b);
+  }
+  // Erase
+  const erase = document.createElement('button');
+  erase.className = 'np-btn np-erase';
+  erase.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
+  erase.setAttribute('aria-label', 'Erase');
+  erase.addEventListener('click', () => clearGameCell());
+  np.appendChild(erase);
+}
+
+function updateNumpad() {
+  const counts = Array(10).fill(0);
+  userVals.forEach(v => { if (v) counts[v]++; });
+  for (let n = 1; n <= 9; n++) {
+    const b = document.getElementById('np-' + n);
+    if (b) b.style.visibility = counts[n] >= 9 ? 'hidden' : '';
+  }
+}
+
+function selectCell(idx) {
+  selected = idx;
+  renderAll();
+}
+
+function inputNum(n) {
+  if (selected === null || givenMask[selected] || solved) return;
+  if (noteMode) {
+    notes[selected].has(n) ? notes[selected].delete(n) : notes[selected].add(n);
+  } else {
+    userVals[selected] = userVals[selected] === n ? 0 : n;
+    notes[selected].clear();
+    if (userVals[selected] === n) {
+      const r = Math.floor(selected / 9), c = selected % 9;
+      const boxR = Math.floor(r / 3) * 3, boxC = Math.floor(c / 3) * 3;
+      for (let i = 0; i < 9; i++) {
+        notes[r * 9 + i].delete(n);
+        notes[i * 9 + c].delete(n);
+      }
+      for (let dr = 0; dr < 3; dr++)
+        for (let dc = 0; dc < 3; dc++)
+          notes[(boxR + dr) * 9 + (boxC + dc)].delete(n);
+    }
+    checkWin();
+  }
+  renderAll();
+  saveState();
+}
+
+function clearGameCell() {
+  if (selected === null || givenMask[selected] || solved) return;
+  userVals[selected] = 0;
+  notes[selected].clear();
+  renderAll();
+  saveState();
+}
+
+function toggleNote() {
+  noteMode = !noteMode;
+  updateNoteBtn();
+}
+
+function updateNoteBtn() {
+  const b = document.getElementById('note-btn');
+  if (noteMode) {
+    b.classList.add('active');
+    b.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Notes: ON';
+  } else {
+    b.classList.remove('active');
+    b.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Notes';
+  }
+}
+
+function onGameKey(e) {
+  if (e.key === ' ') { togglePause(); e.preventDefault(); return; }
+  if (paused) return;
+  if (e.key >= '1' && e.key <= '9') { inputNum(parseInt(e.key)); return; }
+  if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { clearGameCell(); return; }
+  if (e.key === 'n' || e.key === 'N') { toggleNote(); return; }
+  const dirs = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 };
+  if (dirs[e.key] !== undefined && selected !== null) {
+    const nxt = selected + dirs[e.key];
+    if (nxt >= 0 && nxt < 81) { selected = nxt; renderAll(); e.preventDefault(); }
+  }
+}
+
+// ── RENDER ──
+function getConflicts() {
+  const bad = new Set();
+  const check = cells => {
+    const seen = {};
+    for (const i of cells) {
+      const v = userVals[i]; if (!v) continue;
+      if (seen[v] !== undefined) { bad.add(i); bad.add(seen[v]); }
+      else seen[v] = i;
+    }
+  };
+  for (let i = 0; i < 9; i++) {
+    const row = [], col = [], box = [];
+    for (let j = 0; j < 9; j++) {
+      row.push(i * 9 + j);
+      col.push(j * 9 + i);
+      box.push(Math.floor(i / 3) * 27 + (i % 3) * 3 + Math.floor(j / 3) * 9 + j % 3);
+    }
+    check(row); check(col); check(box);
+  }
+  return bad;
+}
+
+function renderAll() {
+  updateNumpad();
+  const conflicts = getConflicts();
+  const selR = selected !== null ? Math.floor(selected / 9) : -1;
+  const selC = selected !== null ? selected % 9 : -1;
+  const selBox = selected !== null ? Math.floor(selR / 3) * 3 + Math.floor(selC / 3) : -1;
+  const selVal = selected !== null ? userVals[selected] : 0;
+
+  for (let idx = 0; idx < 81; idx++) {
+    const td = document.getElementById('gc-' + idx);
+    if (!td) continue;
+    const r = Math.floor(idx / 9), c = idx % 9;
+    const box = Math.floor(r / 3) * 3 + Math.floor(c / 3);
+
+    const keep = ['thick-right', 'thick-bottom', 'given'].filter(cl => td.classList.contains(cl));
+    td.className = keep.join(' ');
+
+    if (idx === selected) td.classList.add('selected');
+    else if (r === selR || c === selC || box === selBox) td.classList.add('highlight');
+    if (selVal && userVals[idx] === selVal && idx !== selected && userVals[idx] !== 0) td.classList.add('same-val');
+    if (conflicts.has(idx) && userVals[idx] !== 0) td.classList.add('conflict');
+
+    td.innerHTML = '';
+    const v = userVals[idx];
+    if (v !== 0) {
+      const span = document.createElement('span');
+      const isConflict = conflicts.has(idx);
+      const isGiven = givenMask[idx];
+      span.className = 'cell-val' +
+        (isGiven ? '' : ' cell-user') +
+        (isConflict ? (isGiven ? ' cell-given-conflict' : ' cell-conflict') : '');
+      span.textContent = v;
+      td.appendChild(span);
+    } else if (notes[idx] && notes[idx].size > 0) {
+      const ng = document.createElement('div');
+      ng.className = 'notes-grid';
+      for (let n = 1; n <= 9; n++) {
+        const s = document.createElement('span');
+        s.className = 'note-n';
+        s.textContent = notes[idx].has(n) ? n : '';
+        ng.appendChild(s);
+      }
+      td.appendChild(ng);
+    }
+  }
+}
+
+// ── WIN ──
+function checkWin() {
+  if (userVals.some(v => !v) || getConflicts().size > 0) return;
+  solved = true;
+  stopTimer();
+  const mins = Math.floor(seconds / 60), secs = seconds % 60;
+  document.getElementById('win-time').textContent = `Completed in ${mins}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('win-overlay').classList.add('show');
+}
+
+function closeWin() {
+  document.getElementById('win-overlay').classList.remove('show');
+}
+
+// ── PAUSE ──
+function togglePause() {
+  if (solved) return;
+  paused = !paused;
+  const cover = document.getElementById('board-cover');
+  const icon = document.getElementById('pause-icon');
+  const label = document.getElementById('pause-label');
+  if (paused) {
+    cover.classList.add('show');
+    stopTimer();
+    icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    label.textContent = 'Resume';
+  } else {
+    cover.classList.remove('show');
+    timerInterval = setInterval(() => { seconds++; updateTimerDisplay(); }, 1000);
+    icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    label.textContent = 'Pause';
+  }
+}
+
+// ── TIMER ──
+function startTimer() {
+  stopTimer();
+  paused = false;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => { seconds++; updateTimerDisplay(); saveState(); }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(seconds / 60), s = seconds % 60;
+  document.getElementById('timer').textContent = m + ':' + String(s).padStart(2, '0');
+}
+
+// ── LOCALSTORAGE SAVE/RESTORE ──
+function saveState() {
+  if (!givenMask.length && document.getElementById('screen-game').style.display === 'none') {
+    // save setup state
+    store.set('sudoku-setup', JSON.stringify({ setupVals }));
+    return;
+  }
+  if (!givenMask.length) return;
+  const state = {
+    setupVals,
+    givenMask,
+    userVals,
+    notes: notes.map(s => [...s]),
+    seconds,
+    noteMode,
+    solved,
+    screen: document.getElementById('screen-game').style.display !== 'none' ? 'game' : 'setup'
+  };
+  store.set('sudoku-state', JSON.stringify(state));
+}
+
+function clearSave() {
+  store.remove('sudoku-state');
+  store.remove('sudoku-setup');
+}
+
+function restoreState() {
+  try {
+    // Try to restore game state
+    const raw = store.get('sudoku-state');
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.givenMask && s.givenMask.length === 81) {
+        setupVals = s.setupVals;
+        givenMask = s.givenMask;
+        userVals = s.userVals;
+        notes = s.notes.map(arr => new Set(arr));
+        seconds = s.seconds || 0;
+        noteMode = s.noteMode || false;
+        solved = s.solved || false;
+        if (s.screen === 'game') {
+          document.getElementById('screen-setup').style.display = 'none';
+          document.getElementById('screen-game').style.display = 'block';
+          document.getElementById('header-edit-btn').style.display = '';
+          buildGameBoard();
+          buildNumpad();
+          updateNoteBtn();
+          updateTimerDisplay();
+          if (!solved) {
+            timerInterval = setInterval(() => { seconds++; updateTimerDisplay(); saveState(); }, 1000);
+          } else {
+            document.getElementById('status-msg').textContent = '✓ Already solved!';
+          }
+          document.addEventListener('keydown', onGameKey);
+          return true;
+        } else {
+          renderSetupBoard();
+          document.addEventListener('keydown', onSetupKey);
+          return true;
+        }
+      }
+    }
+    // Try to restore setup state
+    const setupRaw = store.get('sudoku-setup');
+    if (setupRaw) {
+      const s = JSON.parse(setupRaw);
+      if (s.setupVals && s.setupVals.length === 81) {
+        setupVals = s.setupVals;
+        renderSetupBoard();
+      }
+    }
+  } catch(e) { /* ignore */ }
+  document.addEventListener('keydown', onSetupKey);
+  return false;
+}
+
+// ── THEME ──
+(function(){
+  const sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const saved = store.get('sudoku-theme');
+  const theme = saved || (sys ? 'dark' : 'light');
+  applyTheme(theme);
+})();
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const icon = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+  store.set('sudoku-theme', theme);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+window.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('screen-game').style.display !== 'none') {
+    e.preventDefault();
+    goBackToSetup();
+  }
+}, true);
+
+buildSetupBoard();
+buildSetupNumpad();
+restoreState();
+</script>
+</body>
+</html>
