@@ -524,13 +524,162 @@ header .subtitle {
   .cell-val { font-size: 16px; }
   .setup-cell-val { font-size: 15px; }
 }
+
+/* ── MY GAMES SCREEN ── */
+#screen-mygames { display: none; width: 100%; }
+
+.mygames-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+.mygames-header h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ink);
+}
+
+.mygames-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.slot-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.slot-card:hover { border-color: var(--border-bold); background: var(--surface2); }
+.slot-card.slot-active { border-color: var(--accent2); }
+.slot-card.slot-empty { cursor: default; opacity: 0.45; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; }
+.slot-card.slot-empty:hover { border-color: var(--border); background: var(--surface); }
+
+.slot-thumb { flex-shrink: 0; line-height: 0; }
+.slot-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-top: 2px; }
+.slot-progress { font-size: 13px; font-weight: 600; color: var(--ink); }
+.slot-done { color: var(--success); }
+.slot-time { font-size: 11px; color: var(--ink3); font-family: 'DM Mono', monospace; }
+.slot-date { font-size: 11px; color: var(--ink3); }
+.slot-current-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.slot-empty-label { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+.slot-delete {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: transparent;
+  border: none;
+  color: var(--ink3);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+  line-height: 0;
+}
+.slot-card:hover .slot-delete { opacity: 1; }
+.slot-delete:hover { color: var(--conflict-color); }
+@media (hover: none) { .slot-delete { opacity: 0.5; } }
+
+/* ── SLOT PICKER OVERLAY ── */
+#slot-picker-overlay, #save-msg-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,23,20,0.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#slot-picker-overlay.show, #save-msg-overlay.show { display: flex; }
+
+.overlay-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  border: 1.5px solid var(--border);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.overlay-card h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+.overlay-card p { font-size: 13px; color: var(--ink2); margin-bottom: 16px; }
+
+.slot-picker-list { display: flex; flex-direction: column; gap: 8px; }
+
+.slot-picker-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.slot-picker-item:hover { border-color: var(--border-bold); background: var(--surface2); }
+.slot-picker-info { flex: 1; }
+.slot-picker-info .slot-progress { font-size: 13px; font-weight: 600; color: var(--ink); }
+.slot-picker-info .slot-date { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+.save-msg-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+/* ── CONFIRM DIALOG ── */
+#confirm-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,23,20,0.6);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#confirm-overlay.show { display: flex; }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Sudoku</h1>
-  <span class="subtitle" style="flex:1">Daily Puzzles</span>
+  <span style="flex:1"></span>
+  <button id="header-mygames-btn" class="btn btn-ghost" onclick="showMyGames()" title="My saved games">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    My Games
+  </button>
+  <button id="header-save-btn" class="btn btn-ghost" onclick="saveFromGame()" title="Save current game" style="display:none;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Save
+  </button>
   <button id="header-edit-btn" class="btn btn-ghost" onclick="goBackToSetup()" title="Edit puzzle" style="display:none;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
     Edit
@@ -556,7 +705,11 @@ header .subtitle {
     <div class="setup-actions">
       <button class="btn" onclick="clearSetupBoard()" title="Clear all cells">Clear all</button>
       <button class="btn" onclick="loadExample()">Example</button>
-      <button class="btn btn-primary" onclick="startGame()">Start playing →</button>
+      <button class="btn" onclick="saveFromSetup()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save
+      </button>
+      <button class="btn btn-primary" onclick="startGame()">Start →</button>
     </div>
     <p id="setup-error" style="font-size:13px;color:var(--conflict-color);margin-top:10px;display:none">Please fill in at least 17 clues to have a valid puzzle.</p>
 
@@ -606,6 +759,18 @@ header .subtitle {
     <div id="numpad" role="group" aria-label="Number input"></div>
   </div>
 
+  <!-- MY GAMES SCREEN -->
+  <div id="screen-mygames">
+    <div class="mygames-header">
+      <button class="btn btn-ghost" onclick="hideMyGames()" style="padding:8px 10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <h2>My Games</h2>
+    </div>
+    <div id="mygames-grid" class="mygames-grid"></div>
+  </div>
+
 </div>
 
 <!-- WIN OVERLAY -->
@@ -615,6 +780,42 @@ header .subtitle {
     <p id="win-time">You completed the puzzle.</p>
     <div class="win-actions">
       <button class="btn" onclick="goBackToSetup(); closeWin()">New puzzle</button>
+    </div>
+  </div>
+</div>
+
+<!-- SLOT PICKER OVERLAY -->
+<div id="slot-picker-overlay">
+  <div class="overlay-card">
+    <h3>All slots are full</h3>
+    <p>Choose a saved game to overwrite:</p>
+    <div id="slot-picker-list" class="slot-picker-list"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="document.getElementById('slot-picker-overlay').classList.remove('show')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE MESSAGE OVERLAY -->
+<div id="save-msg-overlay">
+  <div class="overlay-card">
+    <h3>Game saved!</h3>
+    <p id="save-msg-text"></p>
+    <div class="save-msg-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('save-msg-overlay').classList.remove('show')">Close</button>
+      <button class="btn btn-primary" id="save-msg-start-btn" onclick="">Start playing →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM OVERLAY -->
+<div id="confirm-overlay">
+  <div class="overlay-card">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-body"></p>
+    <div class="save-msg-actions">
+      <button class="btn btn-ghost" id="confirm-cancel-btn">Cancel</button>
+      <button class="btn btn-primary" id="confirm-ok-btn">OK</button>
     </div>
   </div>
 </div>
@@ -637,6 +838,255 @@ let selected = null, noteMode = false, solved = false;
 let timerInterval = null, seconds = 0;
 let history = [];
 let locked = new Set();
+let slots = Array(10).fill(null);
+let activeSlot = null;
+let myGamesFrom = 'setup';
+
+// ── SLOT HELPERS ──
+function loadSlots() {
+  try {
+    const raw = store.get('sudoku-slots');
+    if (raw) { const p = JSON.parse(raw); if (Array.isArray(p) && p.length === 10) slots = p; }
+  } catch(e) {}
+}
+
+function saveSlots() { store.set('sudoku-slots', JSON.stringify(slots)); }
+
+function currentSlotData() {
+  return {
+    savedAt: new Date().toISOString(),
+    setupVals: setupVals.slice(),
+    givenMask: givenMask.slice(),
+    userVals: userVals.slice(),
+    notes: notes.map(s => [...s]),
+    locked: [...locked],
+    seconds, solved, noteMode
+  };
+}
+
+function hasUnsavedMoves() {
+  return userVals.some((v, i) => !givenMask[i] && v > 0) || notes.some(s => s.size > 0);
+}
+
+function slotProgress(slot) {
+  return slot.userVals.filter(v => v > 0).length;
+}
+
+// ── THUMBNAIL ──
+function makeThumbnail(slot) {
+  const cs = 9, pad = 1, grid = 81, total = grid + 2 * pad;
+  let cells = '', lines = '';
+  for (let i = 0; i < 81; i++) {
+    const r = Math.floor(i / 9), c = i % 9;
+    const x = pad + c * cs, y = pad + r * cs;
+    let fill;
+    if (slot.givenMask[i]) fill = 'var(--accent)';
+    else if (slot.userVals[i]) fill = slot.solved ? 'var(--success)' : 'var(--user-color)';
+    else fill = null;
+    if (fill) cells += `<rect x="${x+.5}" y="${y+.5}" width="${cs-1}" height="${cs-1}" fill="${fill}" opacity="${slot.givenMask[i] ? '.85' : '.55'}"/>`;
+  }
+  for (let i = 1; i < 9; i++) {
+    const pos = pad + i * cs;
+    const thick = i % 3 === 0;
+    lines += `<line x1="${pos}" y1="${pad}" x2="${pos}" y2="${pad+grid}" stroke="var(--border${thick ? '-bold' : ''})" stroke-width="${thick ? 1.2 : 0.3}"/>`;
+    lines += `<line x1="${pad}" y1="${pos}" x2="${pad+grid}" y2="${pos}" stroke="var(--border${thick ? '-bold' : ''})" stroke-width="${thick ? 1.2 : 0.3}"/>`;
+  }
+  return `<svg viewBox="0 0 ${total} ${total}" xmlns="http://www.w3.org/2000/svg" style="width:83px;height:83px;display:block;border:1.5px solid var(--border-bold);border-radius:3px;background:var(--surface)"><rect x="${pad}" y="${pad}" width="${grid}" height="${grid}" fill="var(--surface2)" opacity=".3"/>${cells}${lines}<rect x="${pad}" y="${pad}" width="${grid}" height="${grid}" fill="none" stroke="var(--border-bold)" stroke-width="1.5"/></svg>`;
+}
+
+// ── MY GAMES SCREEN ──
+function showMyGames() {
+  loadSlots();
+  myGamesFrom = document.getElementById('screen-game').style.display !== 'none' ? 'game' : 'setup';
+  document.getElementById('screen-setup').style.display = 'none';
+  document.getElementById('screen-game').style.display = 'none';
+  document.getElementById('screen-mygames').style.display = 'block';
+  document.getElementById('header-mygames-btn').classList.add('active');
+  renderMyGames();
+}
+
+function hideMyGames() {
+  stopTimer();
+  document.removeEventListener('keydown', onGameKey);
+  document.getElementById('screen-mygames').style.display = 'none';
+  document.getElementById('screen-game').style.display = 'none';
+  document.getElementById('header-mygames-btn').classList.remove('active');
+  document.getElementById('header-edit-btn').style.display = 'none';
+  document.getElementById('header-save-btn').style.display = 'none';
+  document.getElementById('screen-setup').style.display = 'block';
+  document.addEventListener('keydown', onSetupKey);
+}
+
+function renderMyGames() {
+  const grid = document.getElementById('mygames-grid');
+  grid.innerHTML = '';
+  slots.forEach((slot, idx) => {
+    const card = document.createElement('div');
+    if (!slot) {
+      card.className = 'slot-card slot-empty';
+      card.innerHTML = `<div class="slot-empty-label">Empty</div>`;
+    } else {
+      const filled = slotProgress(slot);
+      const date = new Date(slot.savedAt);
+      const dateStr = date.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+      const timeStr = date.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+      const m = Math.floor(slot.seconds/60), s = slot.seconds % 60;
+      const elapsed = m + ':' + String(s).padStart(2,'0');
+      const isCurrent = idx === activeSlot;
+      card.className = 'slot-card' + (isCurrent ? ' slot-active' : '');
+      card.innerHTML = `
+        <div class="slot-thumb">${makeThumbnail(slot)}</div>
+        <div class="slot-meta">
+          <div class="slot-progress ${slot.solved ? 'slot-done' : ''}">${slot.solved ? '✓ Done' : filled + ' / 81'}</div>
+          <div class="slot-time">⏱ ${elapsed}</div>
+          <div class="slot-date">${dateStr} ${timeStr}</div>
+          ${isCurrent ? '<div class="slot-current-badge">▶ Playing</div>' : ''}
+        </div>
+        <button class="slot-delete" title="Delete" onclick="confirmDeleteSlot(${idx},event)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>`;
+      card.addEventListener('click', () => requestLoadSlot(idx));
+    }
+    grid.appendChild(card);
+  });
+}
+
+function confirmDeleteSlot(idx, e) {
+  e.stopPropagation();
+  showConfirm('Delete this game?', 'This cannot be undone.', () => {
+    slots[idx] = null;
+    if (activeSlot === idx) { activeSlot = null; }
+    saveSlots();
+    renderMyGames();
+  });
+}
+
+function requestLoadSlot(idx) {
+  const slot = slots[idx];
+  if (!slot) return;
+  const needsConfirm = myGamesFrom === 'game' && activeSlot === null && hasUnsavedMoves();
+  if (needsConfirm) {
+    showConfirm('Load saved game?', 'Your current unsaved progress will be lost.', () => loadSlotIntoGame(idx));
+  } else {
+    loadSlotIntoGame(idx);
+  }
+}
+
+function loadSlotIntoGame(idx) {
+  const slot = slots[idx];
+  activeSlot = idx;
+  setupVals = slot.setupVals.slice();
+  givenMask = slot.givenMask.slice();
+  userVals = slot.userVals.slice();
+  notes = slot.notes.map(arr => new Set(arr));
+  locked = new Set(slot.locked || []);
+  seconds = slot.seconds || 0;
+  solved = slot.solved || false;
+  noteMode = slot.noteMode || false;
+  history = [];
+  stopTimer();
+  document.removeEventListener('keydown', onGameKey);
+  document.getElementById('screen-mygames').style.display = 'none';
+  document.getElementById('screen-setup').style.display = 'none';
+  document.getElementById('screen-game').style.display = 'block';
+  document.getElementById('header-mygames-btn').classList.remove('active');
+  document.getElementById('header-edit-btn').style.display = '';
+  document.getElementById('header-save-btn').style.display = 'none';
+  document.getElementById('status-msg').textContent = solved ? '✓ Already solved!' : '';
+  buildGameBoard();
+  buildNumpad();
+  updateNoteBtn();
+  updateTimerDisplay();
+  if (!solved) startTimer();
+  document.addEventListener('keydown', onGameKey);
+  saveState();
+}
+
+// ── SAVE FLOWS ──
+function saveFromSetup() {
+  const clues = setupVals.filter(v => v > 0).length;
+  const err = document.getElementById('setup-error');
+  if (clues < 17) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  const doSave = (idx) => {
+    slots[idx] = {
+      savedAt: new Date().toISOString(),
+      setupVals: setupVals.slice(),
+      givenMask: setupVals.map(v => v > 0),
+      userVals: setupVals.slice(),
+      notes: Array(81).fill([]),
+      locked: [],
+      seconds: 0, solved: false, noteMode: false
+    };
+    saveSlots();
+    showSaveMsg(`Saved! Ready to play when you are.`, true, idx);
+  };
+  loadSlots();
+  const emptyIdx = slots.findIndex(s => s === null);
+  emptyIdx >= 0 ? doSave(emptyIdx) : pickSlotToOverwrite(doSave);
+}
+
+function saveFromGame() {
+  const doSave = (idx) => {
+    activeSlot = idx;
+    slots[idx] = currentSlotData();
+    saveSlots();
+    document.getElementById('header-save-btn').style.display = 'none';
+    showSaveMsg(`Game saved successfully.`, false, idx);
+  };
+  loadSlots();
+  const emptyIdx = slots.findIndex(s => s === null);
+  emptyIdx >= 0 ? doSave(emptyIdx) : pickSlotToOverwrite(doSave);
+}
+
+function pickSlotToOverwrite(onSelect) {
+  const list = document.getElementById('slot-picker-list');
+  list.innerHTML = '';
+  slots.forEach((slot, idx) => {
+    if (!slot) return;
+    const filled = slotProgress(slot);
+    const date = new Date(slot.savedAt);
+    const dateStr = date.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+    const m = Math.floor(slot.seconds/60), s = slot.seconds % 60;
+    const item = document.createElement('div');
+    item.className = 'slot-picker-item';
+    item.innerHTML = `<div style="flex-shrink:0">${makeThumbnail(slot)}</div>
+      <div class="slot-picker-info">
+        <div class="slot-progress ${slot.solved ? 'slot-done' : ''}">${slot.solved ? '✓ Done' : filled + '/81'}</div>
+        <div class="slot-date">${dateStr} · ⏱ ${m}:${String(s).padStart(2,'0')}</div>
+      </div>`;
+    item.addEventListener('click', () => {
+      document.getElementById('slot-picker-overlay').classList.remove('show');
+      onSelect(idx);
+    });
+    list.appendChild(item);
+  });
+  document.getElementById('slot-picker-overlay').classList.add('show');
+}
+
+function showSaveMsg(text, offerStart, slotIdx) {
+  document.getElementById('save-msg-text').textContent = text;
+  const startBtn = document.getElementById('save-msg-start-btn');
+  startBtn.style.display = offerStart ? '' : 'none';
+  startBtn.onclick = () => {
+    document.getElementById('save-msg-overlay').classList.remove('show');
+    loadSlotIntoGame(slotIdx);
+  };
+  document.getElementById('save-msg-overlay').classList.add('show');
+}
+
+// ── GENERIC CONFIRM ──
+function showConfirm(title, body, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').textContent = body;
+  const overlay = document.getElementById('confirm-overlay');
+  overlay.classList.add('show');
+  const ok = document.getElementById('confirm-ok-btn');
+  const cancel = document.getElementById('confirm-cancel-btn');
+  const cleanup = () => { overlay.classList.remove('show'); ok.onclick = null; cancel.onclick = null; };
+  ok.onclick = () => { cleanup(); onOk(); };
+  cancel.onclick = cleanup;
+}
 
 function pushHistory() {
   history.push({
@@ -823,9 +1273,11 @@ function startGame() {
   selected = null; noteMode = false; solved = false;
   seconds = 0; history = []; locked = new Set();
 
+  activeSlot = null;
   document.getElementById('screen-setup').style.display = 'none';
   document.getElementById('screen-game').style.display = 'block';
   document.getElementById('header-edit-btn').style.display = '';
+  document.getElementById('header-save-btn').style.display = '';
   document.getElementById('status-msg').textContent = '';
 
   document.removeEventListener('keydown', onSetupKey);
@@ -845,6 +1297,7 @@ function goBackToSetup() {
   document.getElementById('screen-game').style.display = 'none';
   document.getElementById('screen-setup').style.display = 'block';
   document.getElementById('header-edit-btn').style.display = 'none';
+  document.getElementById('header-save-btn').style.display = 'none';
   renderSetupBoard();
   document.addEventListener('keydown', onSetupKey);
 }
@@ -1105,22 +1558,22 @@ function updateTimerDisplay() {
 // ── LOCALSTORAGE SAVE/RESTORE ──
 function saveState() {
   if (!givenMask.length && document.getElementById('screen-game').style.display === 'none') {
-    // save setup state
     store.set('sudoku-setup', JSON.stringify({ setupVals }));
     return;
   }
   if (!givenMask.length) return;
   const state = {
-    setupVals,
-    givenMask,
-    userVals,
+    setupVals, givenMask, userVals,
     notes: notes.map(s => [...s]),
-    seconds,
-    noteMode,
-    solved,
+    locked: [...locked],
+    seconds, noteMode, solved, activeSlot,
     screen: document.getElementById('screen-game').style.display !== 'none' ? 'game' : 'setup'
   };
   store.set('sudoku-state', JSON.stringify(state));
+  if (activeSlot !== null) {
+    slots[activeSlot] = currentSlotData();
+    saveSlots();
+  }
 }
 
 function clearSave() {
@@ -1139,13 +1592,17 @@ function restoreState() {
         givenMask = s.givenMask;
         userVals = s.userVals;
         notes = s.notes.map(arr => new Set(arr));
+        locked = new Set(s.locked || []);
         seconds = s.seconds || 0;
         noteMode = s.noteMode || false;
         solved = s.solved || false;
+        activeSlot = s.activeSlot !== undefined ? s.activeSlot : null;
         if (s.screen === 'game') {
+          loadSlots();
           document.getElementById('screen-setup').style.display = 'none';
           document.getElementById('screen-game').style.display = 'block';
           document.getElementById('header-edit-btn').style.display = '';
+          document.getElementById('header-save-btn').style.display = activeSlot === null ? '' : 'none';
           buildGameBoard();
           buildNumpad();
           updateNoteBtn();
